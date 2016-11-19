@@ -102,20 +102,36 @@ RUN apt-get -q update &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 
-ENV CLOUDSDK_CORE_DISABLE_PROMPTS 1
-ENV PATH /opt/google-cloud-sdk/bin:$PATH
-
+# Create an environment variable for the correct distribution
 USER root
-
+ENV HOME /
+RUN apt-get update && apt-get install -y -qq --no-install-recommends wget unzip openssh-client python-openssl && apt-get clean
 # Install Google Cloud Components
-RUN curl https://sdk.cloud.google.com | bash && mv google-cloud-sdk /opt
-RUN gcloud components install kubectl
+ENV CLOUDSDK_PYTHON_SITEPACKAGES 1
+RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.zip && unzip google-cloud-sdk.zip && rm google-cloud-sdk.zip
+RUN google-cloud-sdk/install.sh --usage-reporting=false --path-update=true --bash-completion=true --rc-path=/.bashrc --additional-components kubectl
+
+
+# Disable updater check for the whole installation.
+# Users won't be bugged with notifications to update to the latest version of gcloud.
+RUN google-cloud-sdk/bin/gcloud config set --installation component_manager/disable_update_check true
+
+# Disable updater completely.
+# Running `gcloud components update` doesn't really do anything in a union FS.
+# Changes are lost on a subsequent run.
+RUN sed -i -- 's/\"disable_updater\": false/\"disable_updater\": true/g' /google-cloud-sdk/lib/googlecloudsdk/core/config.json
+
+
+RUN mkdir /.ssh
+ENV PATH /google-cloud-sdk/bin:$PATH
 
 # Install docker
 RUN curl -fsSL https://get.docker.com/ | sh
 
 # Required for ensuring we use the Gcloud docker API version
 ENV DOCKER_API_VERSION=1.21
+
+RUN rm -rf /var/lib/apt/lists/*
 
 # Standard SSH port
 EXPOSE 22
