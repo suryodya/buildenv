@@ -101,9 +101,21 @@ RUN apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get -q install -y -o Dpkg::Options::="--force-confnew"  --no-install-recommends openjdk-7-jre-headless &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
-# Set user jenkins to the image
-RUN useradd -m -d /home/jenkins -s /bin/sh jenkins &&\
-    echo "jenkins:jenkins" | chpasswd
+
+ENV CLOUDSDK_CORE_DISABLE_PROMPTS 1
+ENV PATH /opt/google-cloud-sdk/bin:$PATH
+
+USER root
+
+# Install Google Cloud Components
+RUN curl https://sdk.cloud.google.com | bash && mv google-cloud-sdk /opt
+RUN gcloud components install kubectl
+
+# Install docker
+RUN curl -fsSL https://get.docker.com/ | sh
+
+# Required for ensuring we use the Gcloud docker API version
+ENV DOCKER_API_VERSION=1.21
 
 # Standard SSH port
 EXPOSE 22
