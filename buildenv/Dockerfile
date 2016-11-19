@@ -131,7 +131,7 @@ RUN curl -fsSL https://get.docker.com/ | sh
 # Required for ensuring we use the Gcloud docker API version
 ENV DOCKER_API_VERSION=1.21
 
-RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 # Standard SSH port
 EXPOSE 22
