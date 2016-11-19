@@ -1,5 +1,5 @@
 FROM node:6.9.1
-# Install Bower
+# Install Bower verion 1.8
 RUN npm install -g bower@1.8.0
 # Install Grunt
 RUN npm install -g grunt-cli@1.2.0
